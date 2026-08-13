@@ -36,7 +36,7 @@ jobs:
       - name: Descompactar projeto
         run: |
           mkdir projeto
-          unzip -q automation-cloud-android-native.zip -d projeto
+          unzip -q automation-cloud-android-native-v1.2.zip -d projeto
           ls -la projeto/automation-cloud-android-native
 
       - name: Compilar APK
