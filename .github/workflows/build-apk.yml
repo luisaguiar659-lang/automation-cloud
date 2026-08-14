@@ -36,7 +36,7 @@ jobs:
       - name: Descompactar projeto
         run: |
           mkdir projeto
-          unzip -q master-xcloud-v1.7.zip -d projeto
+          unzip -q master-xcloud-v1.7.1.zip -d projeto
           ls -la projeto/automation-cloud-android-native
 
       - name: Compilar APK
