@@ -29,12 +29,11 @@ jobs:
           unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
-      - name: Extrair MASTER XCLOUD v1.7.5
+      - name: Extrair MASTER XCLOUD v1.7.6
         run: |
           rm -rf projeto
           mkdir -p projeto
-          unzip -q master-xcloud-v1.7.5-buildfix.zip -d projeto
-
+          unzip -q master-xcloud-v1.7.6.zip -d projeto
           echo "=== VERSÃO QUE SERÁ COMPILADA ==="
           grep -n "versionCode" projeto/automation-cloud-android-native/app/build.gradle
           grep -n "versionName" projeto/automation-cloud-android-native/app/build.gradle
@@ -57,7 +56,7 @@ jobs:
         run: |
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/master-xcloud-release.jks"
 
-      - name: Compilar APK release v1.7.5
+      - name: Compilar APK release v1.7.6
         working-directory: projeto/automation-cloud-android-native
         env:
           XCLOUD_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/master-xcloud-release.jks
