@@ -1,1 +1,79 @@
+name: Build MASTER XCLOUD APK
 
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    env:
+      GRADLE_VERSION: "8.7"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Usar Java 17 preinstalado
+        run: |
+          if [ -n "$JAVA_HOME_17_X64" ]; then
+            echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+            echo "$JAVA_HOME_17_X64/bin" >> "$GITHUB_PATH"
+          fi
+          java -version
+
+      - name: Baixar Gradle 8.7
+        run: |
+          set -e
+          curl -fL --retry 5 --retry-delay 5 --retry-all-errors             "https://downloads.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"             -o "$RUNNER_TEMP/gradle.zip"
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Extrair MASTER XCLOUD v1.8.0
+        run: |
+          rm -rf projeto
+          mkdir -p projeto
+          unzip -q master-xcloud-v1.8.0.zip -d projeto
+
+          echo "=== VERSÃO QUE SERÁ COMPILADA ==="
+          grep -n "versionCode" projeto/automation-cloud-android-native/app/build.gradle
+          grep -n "versionName" projeto/automation-cloud-android-native/app/build.gradle
+
+      - name: Validar assinatura
+        env:
+          KEYSTORE_B64: ${{ secrets.XCLOUD_ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.XCLOUD_ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.XCLOUD_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.XCLOUD_ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "ERRO: configure os 4 Repository Secrets do MASTER XCLOUD."
+            exit 1
+          fi
+
+      - name: Preparar chave de assinatura
+        env:
+          KEYSTORE_B64: ${{ secrets.XCLOUD_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/master-xcloud-release.jks"
+
+      - name: Compilar APK release v1.8.0
+        working-directory: projeto/automation-cloud-android-native
+        env:
+          XCLOUD_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/master-xcloud-release.jks
+          XCLOUD_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.XCLOUD_ANDROID_KEYSTORE_PASSWORD }}
+          XCLOUD_ANDROID_KEY_ALIAS: ${{ secrets.XCLOUD_ANDROID_KEY_ALIAS }}
+          XCLOUD_ANDROID_KEY_PASSWORD: ${{ secrets.XCLOUD_ANDROID_KEY_PASSWORD }}
+        run: |
+          gradle :app:assembleRelease --stacktrace
+
+      - name: Preparar APK
+        run: |
+          cp projeto/automation-cloud-android-native/app/build/outputs/apk/release/app-release.apk              MASTER-XCLOUD-v1.8.0-INSTALAVEL.apk
+
+      - name: Enviar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MASTER-XCLOUD-v1.8.0-INSTALAVEL
+          path: MASTER-XCLOUD-v1.8.0-INSTALAVEL.apk
+          retention-days: 30
