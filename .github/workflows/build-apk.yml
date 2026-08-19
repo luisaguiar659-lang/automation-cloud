@@ -33,7 +33,7 @@ jobs:
         run: |
           rm -rf projeto
           mkdir -p projeto
-          unzip -q master-xcloud-v1.8.0.zip -d projeto
+          unzip -q master-xcloud-v1.8.0-GALERIA-SOM.zip -d projeto
 
           echo "=== VERSÃO QUE SERÁ COMPILADA ==="
           grep -n "versionCode" projeto/automation-cloud-android-native/app/build.gradle
