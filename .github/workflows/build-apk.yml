@@ -29,11 +29,11 @@ jobs:
           unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
-      - name: Extrair MASTER XCLOUD v1.8.0
+      - name: Extrair MASTER XCLOUD v1.9.0
         run: |
           rm -rf projeto
           mkdir -p projeto
-          unzip -q master-xcloud-v1.8.0.zip -d projeto
+          unzip -q master-xcloud-v1.9.0.zip -d projeto
 
           echo "=== VERSÃO QUE SERÁ COMPILADA ==="
           grep -n "versionCode" projeto/automation-cloud-android-native/app/build.gradle
@@ -57,7 +57,7 @@ jobs:
         run: |
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/master-xcloud-release.jks"
 
-      - name: Compilar APK release v1.8.0
+      - name: Compilar APK release v1.9.0
         working-directory: projeto/automation-cloud-android-native
         env:
           XCLOUD_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/master-xcloud-release.jks
@@ -69,11 +69,11 @@ jobs:
 
       - name: Preparar APK
         run: |
-          cp projeto/automation-cloud-android-native/app/build/outputs/apk/release/app-release.apk              MASTER-XCLOUD-v1.8.0-INSTALAVEL.apk
+          cp projeto/automation-cloud-android-native/app/build/outputs/apk/release/app-release.apk              MASTER-XCLOUD-v1.9.0-INSTALAVEL.apk
 
       - name: Enviar APK
         uses: actions/upload-artifact@v4
         with:
-          name: MASTER-XCLOUD-v1.8.0-INSTALAVEL
-          path: MASTER-XCLOUD-v1.8.0-INSTALAVEL.apk
+          name: MASTER-XCLOUD-v1.9.0-INSTALAVEL
+          path: MASTER-XCLOUD-v1.9.0-INSTALAVEL.apk
           retention-days: 30
