@@ -19,12 +19,15 @@ jobs:
       - name: Montar fonte funcional v1.10.3
         run: |
           rm -rf projeto export-v1.10.3
-          mkdir -p projeto export-v1.10.3
+          mkdir -p projeto export-v1.10.3/parts
           unzip -q master-xcloud-v1.8.0.zip -d projeto
           python3 patches/v1.10.3/fix_reset_completion.py projeto/automation-cloud-android-native
           cp projeto/automation-cloud-android-native/app/src/main/java/com/automationcloud/app/MainActivity.java export-v1.10.3/MainActivity.java
           cp projeto/automation-cloud-android-native/app/src/main/AndroidManifest.xml export-v1.10.3/AndroidManifest.xml
           cp projeto/automation-cloud-android-native/app/build.gradle export-v1.10.3/app-build.gradle
+          base64 -w0 export-v1.10.3/MainActivity.java > "$RUNNER_TEMP/MainActivity.b64"
+          split -b 18000 -d -a 2 "$RUNNER_TEMP/MainActivity.b64" export-v1.10.3/parts/source.part
+          for f in export-v1.10.3/parts/source.part*; do mv "$f" "$f.b64"; done
 
       - name: Publicar fonte exportada no repositório
         run: |
@@ -34,6 +37,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Fonte já exportada.'
           else
-            git commit -m 'Exportar fonte funcional MASTER XCLOUD v1.10.3'
+            git commit -m 'Exportar fonte funcional MASTER XCLOUD v1.10.3 em partes'
             git push
           fi
