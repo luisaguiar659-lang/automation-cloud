@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.automationcloud.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.automationcloud.app'
+        minSdk 23
+        targetSdk 35
+        versionCode 22
+        versionName '1.10.3'
+    }
+
+    signingConfigs {
+        release {
+            def ksPath = System.getenv("XCLOUD_ANDROID_KEYSTORE_PATH")
+            if (ksPath != null && !ksPath.isEmpty()) {
+                storeFile file(ksPath)
+                storePassword System.getenv("XCLOUD_ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("XCLOUD_ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("XCLOUD_ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+}
