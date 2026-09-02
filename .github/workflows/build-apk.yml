@@ -36,24 +36,14 @@ jobs:
           unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
-      - name: Extrair MASTER XCLOUD v1.8.0
+      - name: Preparar MASTER XCLOUD v1.9.0
         run: |
           rm -rf projeto
           mkdir -p projeto
           unzip -q master-xcloud-v1.8.0.zip -d projeto
-          echo "=== ARQUIVOS JAVA/KOTLIN ==="
-          find projeto/automation-cloud-android-native/app/src/main -type f \( -name '*.java' -o -name '*.kt' -o -name 'AndroidManifest.xml' \) -print
-          echo "=== BUILD.GRADLE ==="
-          cat projeto/automation-cloud-android-native/app/build.gradle
-          echo "=== MAINACTIVITY ==="
-          MAIN=$(find projeto/automation-cloud-android-native/app/src/main -type f \( -name 'MainActivity.java' -o -name 'MainActivity.kt' \) | head -1)
-          [ -n "$MAIN" ] && cat "$MAIN" || true
-
-      - name: Aplicar patch frontal
-        run: |
-          if [ -f patches/v1.9.0/front_dashboard.py ]; then
-            python3 patches/v1.9.0/front_dashboard.py projeto/automation-cloud-android-native
-          fi
+          python3 patches/v1.9.0/front_dashboard.py projeto/automation-cloud-android-native
+          grep -n "versionCode" projeto/automation-cloud-android-native/app/build.gradle
+          grep -n "versionName" projeto/automation-cloud-android-native/app/build.gradle
 
       - name: Validar assinatura
         env:
@@ -73,7 +63,7 @@ jobs:
         run: |
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/master-xcloud-release.jks"
 
-      - name: Compilar APK release
+      - name: Compilar APK release v1.9.0
         working-directory: projeto/automation-cloud-android-native
         env:
           XCLOUD_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/master-xcloud-release.jks
