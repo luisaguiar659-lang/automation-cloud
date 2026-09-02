@@ -2,6 +2,11 @@ name: Build MASTER XCLOUD APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-apk.yml'
+      - 'patches/**'
 
 jobs:
   build:
@@ -25,7 +30,9 @@ jobs:
       - name: Baixar Gradle 8.7
         run: |
           set -e
-          curl -fL --retry 5 --retry-delay 5 --retry-all-errors             "https://downloads.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"             -o "$RUNNER_TEMP/gradle.zip"
+          curl -fL --retry 5 --retry-delay 5 --retry-all-errors \
+            "https://downloads.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+            -o "$RUNNER_TEMP/gradle.zip"
           unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
@@ -34,10 +41,19 @@ jobs:
           rm -rf projeto
           mkdir -p projeto
           unzip -q master-xcloud-v1.8.0.zip -d projeto
+          echo "=== ARQUIVOS JAVA/KOTLIN ==="
+          find projeto/automation-cloud-android-native/app/src/main -type f \( -name '*.java' -o -name '*.kt' -o -name 'AndroidManifest.xml' \) -print
+          echo "=== BUILD.GRADLE ==="
+          cat projeto/automation-cloud-android-native/app/build.gradle
+          echo "=== MAINACTIVITY ==="
+          MAIN=$(find projeto/automation-cloud-android-native/app/src/main -type f \( -name 'MainActivity.java' -o -name 'MainActivity.kt' \) | head -1)
+          [ -n "$MAIN" ] && cat "$MAIN" || true
 
-          echo "=== VERSÃO QUE SERÁ COMPILADA ==="
-          grep -n "versionCode" projeto/automation-cloud-android-native/app/build.gradle
-          grep -n "versionName" projeto/automation-cloud-android-native/app/build.gradle
+      - name: Aplicar patch frontal
+        run: |
+          if [ -f patches/v1.9.0/front_dashboard.py ]; then
+            python3 patches/v1.9.0/front_dashboard.py projeto/automation-cloud-android-native
+          fi
 
       - name: Validar assinatura
         env:
@@ -57,23 +73,22 @@ jobs:
         run: |
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/master-xcloud-release.jks"
 
-      - name: Compilar APK release v1.8.0
+      - name: Compilar APK release
         working-directory: projeto/automation-cloud-android-native
         env:
           XCLOUD_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/master-xcloud-release.jks
           XCLOUD_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.XCLOUD_ANDROID_KEYSTORE_PASSWORD }}
           XCLOUD_ANDROID_KEY_ALIAS: ${{ secrets.XCLOUD_ANDROID_KEY_ALIAS }}
           XCLOUD_ANDROID_KEY_PASSWORD: ${{ secrets.XCLOUD_ANDROID_KEY_PASSWORD }}
-        run: |
-          gradle :app:assembleRelease --stacktrace
+        run: gradle :app:assembleRelease --stacktrace
 
       - name: Preparar APK
         run: |
-          cp projeto/automation-cloud-android-native/app/build/outputs/apk/release/app-release.apk              MASTER-XCLOUD-v1.8.0-INSTALAVEL.apk
+          cp projeto/automation-cloud-android-native/app/build/outputs/apk/release/app-release.apk MASTER-XCLOUD-v1.9.0-FUNCOES-FRENTE.apk
 
       - name: Enviar APK
         uses: actions/upload-artifact@v4
         with:
-          name: MASTER-XCLOUD-v1.8.0-INSTALAVEL
-          path: MASTER-XCLOUD-v1.8.0-INSTALAVEL.apk
+          name: MASTER-XCLOUD-v1.9.0-FUNCOES-FRENTE
+          path: MASTER-XCLOUD-v1.9.0-FUNCOES-FRENTE.apk
           retention-days: 30
