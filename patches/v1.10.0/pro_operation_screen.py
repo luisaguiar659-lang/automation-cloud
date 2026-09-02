@@ -21,15 +21,14 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
-# ---- versão v1.10.0 ----
+# ---- versão v1.10.1 ----
 build = build_file.read_text(encoding="utf-8")
-build = replace_once(build, "versionCode 18", "versionCode 19", "versionCode")
-build = replace_once(build, "versionName '1.9.0'", "versionName '1.10.0'", "versionName")
+build = replace_once(build, "versionCode 18", "versionCode 20", "versionCode")
+build = replace_once(build, "versionName '1.9.0'", "versionName '1.10.1'", "versionName")
 build_file.write_text(build, encoding="utf-8")
 
 src = main_file.read_text(encoding="utf-8")
 
-# ProgressBar para a nova tela de operação.
 src = replace_once(
     src,
     "import android.widget.LinearLayout;\n",
@@ -37,7 +36,6 @@ src = replace_once(
     "import ProgressBar",
 )
 
-# Componentes visuais da operação. Nenhum deles altera o motor WebView/JS.
 src = replace_once(
     src,
     "    private TextView connectionStatus;\n",
@@ -52,32 +50,27 @@ src = replace_once(
     "campos da tela de operação",
 )
 
-# Abre a experiência profissional exatamente quando uma operação real começa.
 begin_anchor = '''        addProgress(\n                "INÍCIO",\n                flowLabel(activeFlow),\n                Color.rgb(255, 193, 7)\n        );\n\n        webView.loadUrl(\n'''
 begin_new = '''        addProgress(\n                "INÍCIO",\n                flowLabel(activeFlow),\n                Color.rgb(255, 193, 7)\n        );\n\n        showOperationScreen();\n        updateOperationScreen("INÍCIO", flowLabel(activeFlow), false, false);\n\n        webView.loadUrl(\n'''
 src = replace_once(src, begin_anchor, begin_new, "abertura da tela de operação")
 
-# Reflete cada etapa que o motor funcional já envia, sem interferir nas decisões.
 message_anchor = '''                addProgress(code, message, color);\n\n                if ("PLAYLIST_VERIFY_ON_DEVICES".equals(code)) {\n'''
 message_new = '''                addProgress(code, message, color);\n                updateOperationScreen(code, message, "success".equals(type), "error".equals(type));\n\n                if ("PLAYLIST_VERIFY_ON_DEVICES".equals(code)) {\n'''
 src = replace_once(src, message_anchor, message_new, "atualização visual das etapas")
 
-# Estado final de sucesso permanece visível por um instante antes de voltar ao painel.
+# Sucesso: mostra a confirmação brevemente e volta sozinho ao dashboard nativo.
 finish_anchor = '''        automationStage = AutomationStage.COMPLETED;\n        notifyOperationSuccess();\n        running = false;\n'''
-finish_new = '''        automationStage = AutomationStage.COMPLETED;\n        updateOperationScreen("CONCLUÍDO", message, true, false);\n        notifyOperationSuccess();\n        handler.postDelayed(this::dismissOperationScreen, 1700);\n        running = false;\n'''
-src = replace_once(src, finish_anchor, finish_new, "final visual de sucesso")
+finish_new = '''        automationStage = AutomationStage.COMPLETED;\n        updateOperationScreen("CONCLUÍDO", message, true, false);\n        notifyOperationSuccess();\n        running = false;\n        handler.postDelayed(() -> {\n            dismissOperationScreen();\n            showBrowser(false);\n        }, 1400);\n'''
+src = replace_once(src, finish_anchor, finish_new, "final visual de sucesso com retorno ao dashboard")
 
-# Em erro, mostra um estado claro e fecha automaticamente depois de alguns segundos.
 error_anchor = '''        addProgress(\n                "ERRO",\n                message,\n                Color.rgb(255, 92, 92)\n        );\n\n        stopBusyOnly();\n'''
 error_new = '''        addProgress(\n                "ERRO",\n                message,\n                Color.rgb(255, 92, 92)\n        );\n        updateOperationScreen("ERRO", message, false, true);\n        handler.postDelayed(this::dismissOperationScreen, 3200);\n\n        stopBusyOnly();\n'''
 src = replace_once(src, error_anchor, error_new, "final visual de erro")
 
-# Ao sair da conta, garante que nenhuma tela de processamento fique aberta.
 logout_anchor = '''    private void logout() {\n        running = false;\n'''
 logout_new = '''    private void logout() {\n        dismissOperationScreen();\n        running = false;\n'''
 src = replace_once(src, logout_anchor, logout_new, "fechar operação no logout")
 
-# Métodos visuais isolados. Não navegam, não injetam JavaScript e não alteram stages.
 methods_anchor = '''    private String friendlyStatus(String code, String message) {\n'''
 methods = r'''    private void showOperationScreen() {
         dismissOperationScreen();
@@ -159,7 +152,7 @@ methods = r'''    private void showOperationScreen() {
             if (operationIcon != null) operationIcon.setText("✓");
             if (operationIcon != null) operationIcon.setTextColor(Color.rgb(183, 255, 60));
             if (operationTitle != null) operationTitle.setText("OPERAÇÃO CONCLUÍDA");
-            if (operationHint != null) operationHint.setText("Tudo certo. Preparando para a próxima operação.");
+            if (operationHint != null) operationHint.setText("Tudo certo. Voltando ao dashboard...");
             if (operationProgress != null) operationProgress.setProgress(100);
         } else if (error || "ERRO".equals(code)) {
             if (operationIcon != null) operationIcon.setText("!");
@@ -233,4 +226,4 @@ methods = r'''    private void showOperationScreen() {
 src = replace_once(src, methods_anchor, methods + methods_anchor, "métodos da tela profissional")
 
 main_file.write_text(src, encoding="utf-8")
-print("Patch v1.10.0 aplicado: tela profissional de Ativar / Reset / Excluir, preservando o motor funcional")
+print("Patch v1.10.1 aplicado: tela profissional + retorno automático ao dashboard após sucesso")
