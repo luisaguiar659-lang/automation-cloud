@@ -36,7 +36,7 @@ jobs:
           unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
-      - name: Preparar MASTER XCLOUD v1.10.0
+      - name: Preparar MASTER XCLOUD v1.10.1
         run: |
           rm -rf projeto
           mkdir -p projeto
@@ -63,7 +63,7 @@ jobs:
         run: |
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/master-xcloud-release.jks"
 
-      - name: Compilar APK release v1.10.0
+      - name: Compilar APK release v1.10.1
         working-directory: projeto/automation-cloud-android-native
         env:
           XCLOUD_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/master-xcloud-release.jks
@@ -74,11 +74,11 @@ jobs:
 
       - name: Preparar APK
         run: |
-          cp projeto/automation-cloud-android-native/app/build/outputs/apk/release/app-release.apk MASTER-XCLOUD-v1.10.0-PRO-OPERACOES.apk
+          cp projeto/automation-cloud-android-native/app/build/outputs/apk/release/app-release.apk MASTER-XCLOUD-v1.10.1-AUTO-DASHBOARD.apk
 
       - name: Enviar APK
         uses: actions/upload-artifact@v4
         with:
-          name: MASTER-XCLOUD-v1.10.0-PRO-OPERACOES
-          path: MASTER-XCLOUD-v1.10.0-PRO-OPERACOES.apk
+          name: MASTER-XCLOUD-v1.10.1-AUTO-DASHBOARD
+          path: MASTER-XCLOUD-v1.10.1-AUTO-DASHBOARD.apk
           retention-days: 30
